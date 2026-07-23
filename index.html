@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decohelen POS Pro - Sistema Inteligente</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) { registration.unregister(); }
+            });
+        }
+    </script>
+
+    <style>
+        :root {
+            --color-fondo: #F5F6FA;
+            --color-paneles: #FFFFFF;
+            --color-texto: #2F3640;
+            --color-acento: #1c3b6d;
+            --color-boton-ok: #32a852;
+            --color-boton-del: #e84118;
+            --color-admin: #f1c40f;
+            --color-input: #F1F2F6;
+            --color-borde: #dcdde1;
+        }
+
+        body {
+            margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('./IMAGENES/fondo.jpg') no-repeat center center fixed;
+            background-size: cover; color: var(--color-texto);
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+
+        #login-screen {
+            background: #FFFFFF; box-shadow: 0px 0px 15px rgba(0,0,0,0.5);
+            padding: 40px; width: 350px; text-align: center; border-radius: 6px;
+        }
+
+        #main-app {
+            background: #FFFFFF; width: 1100px; height: 740px;
+            padding: 20px 40px; box-sizing: border-box;
+            box-shadow: 0px 0px 20px rgba(0,0,0,0.4); position: relative; border-radius: 6px;
+        }
+
+        .hidden { display: none !important; }
+        h2 { font-weight: 300; font-size: 22px; color: var(--color-acento); margin-top: 0; }
+        .section-title { font-size: 13px; font-weight: bold; color: var(--color-acento); margin-bottom: 6px; margin-top: 15px; text-transform: uppercase; }
+        label { font-size: 11px; display: block; margin-bottom: 2px; font-weight: 600; }
+
+        input, select, textarea {
+            width: 100%; padding: 7px; border: 1px solid #a9a9a9;
+            background-color: var(--color-input); font-family: 'Segoe UI'; font-size: 12px; box-sizing: border-box; border-radius: 4px;
+        }
+
+        button {
+            cursor: pointer; padding: 7px 14px; border: none; font-family: 'Segoe UI';
+            font-weight: bold; font-size: 12px; color: white; transition: all 0.2s; border-radius: 4px;
+        }
+        button:hover { filter: brightness(0.9); transform: translateY(-1px); }
+        .btn-acento { background: var(--color-acento); }
+        .btn-ok { background: var(--color-boton-ok); font-size: 13px; padding: 9px 18px; }
+        .btn-del { background: var(--color-boton-del); }
+        .btn-admin { background: var(--color-admin); color: #000; }
+
+        .grid-cliente { display: grid; grid-template-columns: 1.5fr 1fr 1.5fr 1.5fr; gap: 8px 15px; align-items: end; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; border: 1px solid #ccc; background: white; }
+        th, td { padding: 7px; text-align: center; font-size: 12px; border-bottom: 1px solid #eee; }
+        td:nth-child(4) { text-align: left; }
+        th { background-color: var(--color-acento); color: white; text-transform: uppercase; font-weight: bold; font-size: 11px; }
+        tbody tr { cursor: pointer; transition: background 0.1s; }
+        tbody tr:hover { background-color: #f1f2f6; }
+        tbody tr.selected { background-color: #dcdde1; font-weight: bold; } 
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: #f8f9fa; width: 950px; height: 640px;
+            border: 1px solid #999; box-shadow: 0 5px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column;
+            border-radius: 6px; overflow: hidden;
+        }
+        .modal-header {
+            background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 15px; font-weight: bold; border-bottom: 1px solid var(--color-borde); color: var(--color-acento);
+        }
+        .btn-close { background: transparent; color: black; font-size: 18px; padding: 0; margin: 0; }
+        
+        .tabs { display: flex; background: #e9ecef; border-bottom: 1px solid var(--color-borde); flex-wrap: wrap; }
+        .tab-link { background: #e9ecef; color: #495057; border: none; border-bottom: 2px solid transparent; padding: 10px 18px; font-weight: 600; border-radius: 0; }
+        .tab-link.active { background: white; color: var(--color-acento); border-bottom: 3px solid var(--color-acento); }
+        
+        .tab-content { display: none !important; padding: 15px 20px; flex-grow: 1; overflow-y: auto; background: white; }
+        .tab-content.active { display: block !important; }
+
+        .card-box {
+            background: #ffffff; border: 1px solid var(--color-borde); border-radius: 6px; padding: 12px 15px; margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .tabla-general th { background-color: #34495e; font-size: 10px; }
+        .tabla-general td { font-size: 11px; padding: 5px; border-bottom: 1px solid #eee;}
+    </style>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <!-- PANTALLA LOGIN -->
+    <div id="login-screen">
+        <h2>ACCESO AL SISTEMA</h2>
+        <div style="text-align: left; margin-top: 20px;">
+            <label>Tipo de Usuario:</label>
+            <select id="login-usuario" onchange="checkLoginType()">
+                <option value="Vendedor">Vendedor</option>
+                <option value="Administrador">Administrador</option>
+            </select>
+            <label style="margin-top: 15px;">Contraseña (solo Admin):</label>
+            <input type="password" id="login-pass" disabled>
+        </div>
+        <button class="btn-acento" style="width:100%; margin-top: 25px; padding: 10px;" onclick="verificarLogin()">Ingresar</button>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL (POS) -->
+    <div id="main-app" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 8px;">
+            <h2 id="txt-rol" style="margin: 0; font-size: 18px; color: var(--color-acento);">SISTEMA DE FACTURACIÓN</h2>
+            <div style="display: flex; gap: 10px;">
+                <select id="marca-activa" style="font-weight: bold; width: 140px;" onchange="if(typeof cargarTablaInventarioAdmin === 'function') cargarTablaInventarioAdmin();">
+                    <option value="Dekomundo">🔵 Dekomundo</option>
+                    <option value="Dokka">🟢 Dokka</option>
+                    <option value="Castell">🔴 Castell</option>
+                </select>
+                <button id="btn-panel-admin" class="btn-admin hidden" onclick="abrirModuloAdmin()">⚙ Panel Admin</button>
+                <button class="btn-del" onclick="cerrarSesion()">🔒 Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="section-title">Datos del Proyecto / Cliente</div>
+        <div class="grid-cliente">
+            <div><label>Nombre/Razón Social:</label><input type="text" id="cli-nombre"></div>
+            <div>
+                <label>RIF/C.I:</label>
+                <div style="display: flex;">
+                    <select id="cli-tipo-doc" style="width: 50px; margin-right: 5px;"><option>V-</option><option>J-</option></select>
+                    <input type="text" id="cli-rif">
+                </div>
+            </div>
+            <div><label>Correo Electrónico:</label><input type="email" id="cli-correo"></div>
+            <div><label>Dirección Fiscal:</label><input type="text" id="cli-dir"></div>
+            
+            <div><label>Teléfono:</label><input type="text" id="cli-tel"></div>
+            <div><label>Método de Pago:</label>
+                <select id="cli-pago"><option>Zelle</option><option>Efectivo</option><option>Transferencia</option></select>
+            </div>
+            <div><label>Tasa USDT (Ref):</label><input type="number" id="tasa-bcv" disabled></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: end; margin-top: 15px; margin-bottom: 6px;">
+            <div class="section-title" style="margin: 0;">Asistente Inteligente de Ventas (Multi-Producto)</div>
+            <button class="btn-acento" style="font-size: 10px; padding: 4px 10px; background: #8e44ad;" onclick="document.getElementById('pos-catalogo-container').classList.toggle('hidden')">👁 Mostrar / Ocultar Catálogo</button>
+        </div>
+
+        <div id="pos-catalogo-container" class="hidden" style="height: 130px; overflow-y: auto; border: 1px solid var(--color-borde); margin-bottom: 10px; border-radius: 4px;">
+            <table class="tabla-general" style="margin: 0; width: 100%;">
+                <thead>
+                    <tr><th>Código</th><th>Categoría</th><th>Nombre del Producto</th><th>Medida / Detalle</th><th>Factor de Medida</th><th>Precio Unit. ($)</th></tr>
+                </thead>
+                <tbody id="tbody-catalogo-pos"></tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+            <input type="text" id="chat-ia-input" placeholder='Ej: 75 cajas de porcelanato que son 115 metros...' 
+                   style="flex-grow: 1; padding: 10px; font-size: 13px; border: 2px solid var(--color-acento);"
+                   onkeypress="if(event.key === 'Enter') window.appPOS.procesarComandoLocal()">
+            <button class="btn-acento" style="padding: 0 20px;" onclick="window.appPOS.procesarComandoLocal()">✨ Procesar</button>
+        </div>
+        <div id="preview-ventas" style="font-size: 11px; color: #27ae60; font-weight: bold; min-height: 16px; margin-bottom: 5px;"></div>
+
+        <div class="section-title">Resumen del Presupuesto <span id="txt-descuento" style="color: #e84118;"></span></div>
+        <div style="height: 160px; overflow-y: auto; background: var(--color-input); border: 1px solid #a9a9a9;">
+            <table id="tabla-carrito" style="margin: 0; border: none;">
+                <thead>
+                    <tr><th>Cajas/Und</th><th>Medida/Detalle</th><th>Código</th><th>Producto / Servicio</th><th>Precio U.</th><th>Total</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+            <button class="btn-del" onclick="window.appPOS.eliminarItemSeleccionado()">🗑 Eliminar Seleccionado</button>
+            <h2 id="total-general" style="margin: 0; font-size: 20px; font-weight: bold; color: var(--color-acento);">Total: $0.00 | USDT 0.00</h2>
+            <button class="btn-ok" onclick="generarPresupuesto()">📄 GENERAR PDF Y ENVIAR</button>
+        </div>
+    </div>
+
+    <!-- PANEL ADMINISTRADOR MODAL -->
+    <div id="modal-admin" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Panel de Administración - DECOHELEN POS</span>
+                <button class="btn-close" onclick="cerrarModuloAdmin()">✖</button>
+            </div>
+            <div class="tabs">
+                <button class="tab-link active" onclick="switchSubTab(event, 'sub-historial')">Historial</button>
+                <button class="tab-link" onclick="switchSubTab(event, 'sub-inventario')">Agregar Prod.</button>
+                <button class="tab-link" onclick="switchSubTab(event, 'sub-precios')">Actualizar Prod.</button>
+                <button class="tab-link" onclick="switchSubTab(event, 'sub-eliminar'); cargarTablaEliminar();">Eliminar Prod.</button>
+                <button class="tab-link" onclick="switchSubTab(event, 'sub-descuentos')">Descuentos</button>
+                <button class="tab-link" onclick="switchSubTab(event, 'sub-seguridad')">Seguridad / Mantenimiento</button>
+            </div>
+
+            <!-- PESTAÑA 1: HISTORIAL -->
+            <div id="sub-historial" class="tab-content active">
+                <div class="card-box" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn-del" onclick="borrarVentasSeleccionadas()">Borrar Seleccionados</button>
+                    <button class="btn-del" onclick="borrarVentasPorTiempo('dia')">Borrar x Día</button>
+                    <button class="btn-del" onclick="borrarVentasPorTiempo('semana')">Borrar x Semana</button>
+                    <button class="btn-del" onclick="borrarVentasPorTiempo('mes')">Borrar x Mes</button>
+                    <button class="btn-del" style="background:#8e44ad;" onclick="borrarHistorial()">Vaciar Todo</button>
+                    <button class="btn-ok" style="margin-left: auto;" onclick="descargarExcelBackupHistorial()">📊 Descargar Backup de Ventas</button>
+                </div>
+                <div style="height: 400px; overflow-y: auto; border: 1px solid var(--color-borde);">
+                    <table id="tabla-historial" style="margin: 0;">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="chk-all-historial" onchange="toggleSelectAllHistorial(this)"></th>
+                                <th>Fecha</th><th>Hora</th><th>N° Factura</th><th>Cliente</th><th>RIF</th><th>Total USD</th><th>Total USDT</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 2: AGREGAR PRODUCTOS -->
+            <div id="sub-inventario" class="tab-content">
+                <div class="card-box" style="border: 2px dashed var(--color-acento); padding: 10px;">
+                    <label style="color: var(--color-acento);">✨ Asistente IA (Agrega 1 o más productos):</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="text" id="chat-admin-input" placeholder="Ej: Crea un zocalo de PVC a 5 usd y un clavo de acero a 1 usd..." onkeypress="if(event.key === 'Enter') procesarChatAdmin()">
+                        <button class="btn-acento" onclick="procesarChatAdmin()">Crear Productos</button>
+                    </div>
+                    <div id="preview-admin-add" style="font-size: 11px; color: #27ae60; font-weight: bold; margin-top: 5px; min-height: 14px;"></div>
+                </div>
+
+                <div class="card-box" style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; align-items: center; padding: 10px; opacity: 0.8;">
+                    <label style="text-align: right; color: #555;">Código:</label><input type="text" id="inv-cod">
+                    <label style="text-align: right; color: #555;">Categoría:</label><input type="text" id="inv-cat">
+                    <label style="text-align: right; color: #555;">Nombre del Producto:</label><input type="text" id="inv-nom">
+                    <label style="text-align: right; color: #555;">Detalle (Grosor, Medida):</label><textarea id="inv-det" rows="1"></textarea>
+                    <label style="text-align: right; color: #555; font-weight:bold;">Factor de Medida (Ej: 2.2):</label><input type="number" id="inv-rend" step="0.01" placeholder="1 si es por unidad">
+                    <label style="text-align: right; color: #555;">Precio Unitario $:</label><input type="number" id="inv-pre" step="0.01">
+                </div>
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <button class="btn-ok" onclick="guardarProducto()">💾 Guardar Producto Manual</button>
+                </div>
+
+                <div style="height: 130px; overflow-y: auto; border: 1px solid var(--color-borde);">
+                    <table class="tabla-general" style="margin: 0; width: 100%;">
+                        <thead>
+                            <tr><th>Código</th><th>Categoría</th><th>Nombre</th><th>Medida/Detalle</th><th>Factor de Medida</th><th>Precio ($)</th></tr>
+                        </thead>
+                        <tbody class="tbody-admin-compartido"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 3: ACTUALIZAR PRODUCTOS -->
+            <div id="sub-precios" class="tab-content">
+                <div class="card-box" style="border: 2px dashed var(--color-acento);">
+                    <label style="color: var(--color-acento);">✨ Asistente de Actualización (Cambia precios, detalles, o factor):</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="text" id="chat-precios-input" placeholder="Ej: Pon el precio del zocalo en 6 usd, y pon el factor de la pega en 2" onkeypress="if(event.key === 'Enter') procesarChatPrecios()">
+                        <button class="btn-acento" onclick="procesarChatPrecios()">Ejecutar Ajustes</button>
+                    </div>
+                    <div id="preview-admin-prices" style="font-size: 11px; color: #27ae60; font-weight: bold; margin-top: 5px; min-height: 14px;"></div>
+                </div>
+
+                <label style="font-size: 12px; font-weight: bold; color: var(--color-acento); margin-bottom: 5px; display: block;">Catálogo Actual de la Marca:</label>
+                <div style="height: 380px; overflow-y: auto; border: 1px solid var(--color-borde);">
+                    <table class="tabla-general" style="margin: 0; width: 100%;">
+                        <thead>
+                            <tr><th>Código</th><th>Categoría</th><th>Nombre</th><th>Medida/Detalle</th><th>Factor de Medida</th><th>Precio ($)</th></tr>
+                        </thead>
+                        <tbody class="tbody-admin-compartido"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PESTAÑA ELIMINAR PRODUCTOS -->
+            <div id="sub-eliminar" class="tab-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label style="font-size: 13px; font-weight: bold; color: #e84118;">
+                        🗑️ Productos de la marca <span id="marca-eliminar-label">Dekomundo</span>
+                    </label>
+                    <button class="btn-del" onclick="eliminarTodosProductos()" style="background: #c0392b;">
+                        ⚠️ Eliminar TODOS los productos de esta marca
+                    </button>
+                </div>
+                <div style="height: 400px; overflow-y: auto; border: 1px solid var(--color-borde);">
+                    <table class="tabla-general" style="margin: 0; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre del Producto</th>
+                                <th>Precio ($)</th>
+                                <th style="width: 100px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-eliminar"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 4: GESTOR DE DESCUENTOS -->
+            <div id="sub-descuentos" class="tab-content">
+                <div class="card-box" style="border: 2px dashed #8e44ad;">
+                    <label style="color: #8e44ad; font-weight: bold;">🎯 Gestor de Promociones y Descuentos:</label>
+                    <div style="display: flex; gap: 8px; margin-top: 5px;">
+                        <input type="text" id="chat-descuentos-input" placeholder="Ej: Ponle 15% de descuento a la pega... o 'Ya no hay promociones'" onkeypress="if(event.key === 'Enter') procesarChatDescuentos()">
+                        <button class="btn-acento" style="background:#8e44ad;" onclick="procesarChatDescuentos()">Aplicar / Quitar</button>
+                    </div>
+                    <div id="preview-admin-descuentos" style="font-size: 11px; color: #e84118; font-weight: bold; margin-top: 5px; min-height: 14px;"></div>
+                </div>
+
+                <label style="font-size: 12px; font-weight: bold; color: #8e44ad; margin-bottom: 5px; display: block;">Productos Actualmente en Promoción (Marca Activa):</label>
+                <div style="height: 380px; overflow-y: auto; border: 1px solid var(--color-borde);">
+                    <table id="tabla-solo-descuentos" class="tabla-general" style="margin: 0; width: 100%;">
+                        <thead>
+                            <tr style="background-color: #8e44ad;">
+                                <th>Código</th><th>Nombre del Producto</th><th>Precio Base ($)</th><th>Descuento</th><th>Precio Promoción ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 5: SEGURIDAD Y MANTENIMIENTO -->
+            <div id="sub-seguridad" class="tab-content">
+                <div class="card-box" style="max-width: 500px; margin: 15px auto; text-align: center;">
+                    <h2>Seguridad y Bóveda de Backups</h2>
+                    <label style="margin-top: 10px;">Nueva Contraseña Administrador:</label>
+                    <input type="password" id="new-pass" style="text-align: center; margin-bottom: 10px;">
+                    <button class="btn-acento" onclick="cambiarClave()">Actualizar Contraseña</button>
+                    
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--color-borde);">
+                    
+                    <label style="font-size: 14px; color: #27ae60; margin-bottom: 5px; display:block; font-weight: bold;">💾 Generar y Descargar tu Catálogo (Excel):</label>
+                    <p style="font-size: 11px; color: #555; margin-top:0;">Descarga un Excel nuevo que incluye todas las modificaciones, precios, y productos que has añadido recientemente.</p>
+                    <button class="btn-ok" onclick="descargarBackupCatalogo()" style="width: 100%; margin-bottom: 15px; font-size: 14px;">📥 Descargar Catálogo Actualizado</button>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--color-borde);">
+                    
+                    <label style="font-size: 14px; color: #1c3b6d; margin-bottom: 5px; display:block; font-weight: bold;">📥 Importar Catálogo (Restaurar Excel):</label>
+                    <p style="font-size: 11px; color: #555; margin-top:0;">Si tienes un Excel actualizado descargado, súbelo aquí para restaurar todo tu inventario en caso de error.</p>
+                    <input type="file" id="excel-upload" accept=".xlsx, .xls" style="margin-bottom: 10px; padding: 5px; background: white; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+                    <button class="btn-acento" onclick="window.appPOS.cargarExcelManual()" style="width: 100%;">Subir Archivo y Actualizar Catálogo</button>
+                    
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--color-borde);">
+                    <label style="font-size: 12px; color: #e84118; margin-bottom: 10px; display:block;">Sistema de Recuperación Automática (Memoria Interna):</label>
+                    <button class="btn-ok" style="background:#f39c12; padding: 10px 20px; font-size: 12px;" onclick="autoRepararSistema()">🛠️ Auto-Reparar Sistema Rápido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    <script src="motor_pdf.js"></script>
+    <script src="crear_excel.js"></script>
+    <script src="admin_panel.js"></script>
+</body>
+</html>

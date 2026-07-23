@@ -1,0 +1,29 @@
+{
+  "name": "Decohelen POS Pro",
+  "short_name": "Decohelen",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1c3b6d",
+  "description": "Sistema de facturación Decohelen",
+  "icons": [
+    {
+      "src": "./IMAGENES/logo.jpeg",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./IMAGENES/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "./IMAGENES/screenshot-mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png"
+    }
+  ]
+}
