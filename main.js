@@ -46,10 +46,13 @@ class SistemaPOS {
         // 1. INTENTO DE CARGA ONLINE: Buscar siempre la versión más fresca del repositorio
         try {
             const urlRaiz = window.location.origin + window.location.pathname.replace('index.html', '');
+            
+            // CORRECCIÓN APLICADA: Rutas actualizadas apuntando a BACKEND y versiones de respaldo
             const rutasPrueba = [
-                `${urlRaiz}/sistema_ventas_decoroyal_v6_7.xlsx?v=${new Date().getTime()}`,
-                './sistema_ventas_decoroyal_v6_7.xlsx?v=' + new Date().getTime(),
-                '../sistema_ventas_decoroyal_v6_7.xlsx'
+                './BACKEND/sistema_ventas_decoroyal_v6.xlsx?v=' + new Date().getTime(),
+                `${urlRaiz}/BACKEND/sistema_ventas_decoroyal_v6.xlsx?v=${new Date().getTime()}`,
+                './sistema_ventas_decoroyal_v6_4.xlsx?v=' + new Date().getTime(),
+                './sistema_ventas_decoroyal_v6_7.xlsx?v=' + new Date().getTime()
             ];
             
             let bufferLeido = null;
